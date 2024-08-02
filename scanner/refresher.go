@@ -107,6 +107,13 @@ func (r *refresher) refreshAlbums(ctx context.Context, ids ...string) error {
 		if err != nil {
 			return err
 		}
+
+		if a.Rating != 0 {
+			err = repo.SetRating(a.Annotations.Rating, a.ID)
+			if err != nil {
+				return err
+			}
+		}
 		r.cacheWarmer.PreCache(a.CoverArtID())
 	}
 	return nil

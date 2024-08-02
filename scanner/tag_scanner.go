@@ -372,17 +372,28 @@ func (s *TagScanner) addOrUpdateTracksInDB(
 
 		// If track from folder is newer than the one in DB, update/insert in DB
 		log.Trace(ctx, "Updating mediaFiles in DB", "dir", dir, "files", chunk, "numFiles", len(chunk))
+		repo := s.ds.MediaFile(ctx)
+
 		for i := range newTracks {
 			n := newTracks[i]
 			// Keep current annotations if the track is in the DB
 			if t, ok := currentTracks[n.Path]; ok {
+				t.Annotations.Rating = n.Annotations.Rating
 				n.Annotations = t.Annotations
 			}
 			n.LibraryID = s.lib.ID
-			err := s.ds.MediaFile(ctx).Put(&n)
+			err := repo.Put(&n)
 			if err != nil {
 				return 0, err
 			}
+
+			if n.Rating != 0 {
+				err = repo.SetRating(n.Rating, n.ID)
+				if err != nil {
+					return 0, err
+				}
+			}
+
 			refresher.accumulate(n)
 			numUpdatedTracks++
 		}

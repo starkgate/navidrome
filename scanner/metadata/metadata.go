@@ -189,6 +189,8 @@ func (t Tags) Duration() float32           { return float32(t.getFloat("duration
 func (t Tags) SampleRate() int             { return t.getInt("samplerate") }
 func (t Tags) BitRate() int                { return t.getInt("bitrate") }
 func (t Tags) Channels() int               { return t.getInt("channels") }
+func (t Tags) Rating() int                 { return t.getInt("rating") }
+func (t Tags) AlbumRating() string         { return t.getFirstTagValue("album rating") }
 func (t Tags) ModificationTime() time.Time { return t.fileInfo.ModTime() }
 func (t Tags) Size() int64                 { return t.fileInfo.Size() }
 func (t Tags) FilePath() string            { return t.filePath }

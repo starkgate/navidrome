@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"slices"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -149,6 +150,8 @@ func (mfs MediaFiles) ToAlbum() Album {
 		a.MbzAlbumComment = m.MbzAlbumComment
 		a.CatalogNum = m.CatalogNum
 		a.Compilation = m.Compilation
+		a.Rating, _ = strconv.Atoi(m.Comment)
+		a.Rating = int(a.Rating / 20)
 
 		// Calculated attributes based on aggregations
 		a.Duration += m.Duration
