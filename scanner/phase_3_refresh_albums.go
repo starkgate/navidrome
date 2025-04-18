@@ -90,7 +90,7 @@ func (p *phaseRefreshAlbums) filterUnmodified(album *model.Album) (*model.Album,
 	}
 
 	newAlbum := mfs.ToAlbum()
-	if album.Equals(newAlbum) {
+	if album.Equals(newAlbum) && album.Rating == newAlbum.Rating {
 		log.Trace("Scanner: album is up to date. Skipping", "album_id", album.ID,
 			"name", album.Name, "songCount", album.SongCount, "updatedAt", album.UpdatedAt)
 		p.skipped.Add(1)
@@ -109,6 +109,13 @@ func (p *phaseRefreshAlbums) refreshAlbum(album *model.Album) (*model.Album, err
 	if err != nil {
 		return nil, fmt.Errorf("refreshing album %s: %w", album.ID, err)
 	}
+
+	// Update album rating
+	log.Debug(p.ctx, "Scanner: Persisting album rating to DB", "album", album.Name, "albumArtist", album.AlbumArtist, "id", album.ID, "rating", album.Rating)
+	if err := p.ds.Album(p.ctx).SetRating(album.Rating, album.ID); err != nil {
+		return nil, fmt.Errorf("setting rating for album %s: %w", album.ID, err)
+	}
+
 	p.refreshed.Add(1)
 	p.state.changesDetected.Store(true)
 	return album, nil

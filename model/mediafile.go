@@ -6,9 +6,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"iter"
+	"math"
 	"mime"
 	"path/filepath"
 	"slices"
+	"strconv"
 	"time"
 
 	"github.com/gohugoio/hashstructure"
@@ -245,6 +247,15 @@ func (mfs MediaFiles) ToAlbum() Album {
 	a.MbzAlbumID = slice.MostFrequent(mbzAlbumIds)
 	a.MbzReleaseGroupID = slice.MostFrequent(mbzReleaseGroupIds)
 	fixAlbumArtist(&a)
+
+	// Try to get the album rating from the albumrating tag of the first mediafile
+	if albumRating := mfs[0].Tags[TagAlbumRating]; len(albumRating) > 0 {
+		// Since this function is static, we can't use the metadata package's mapRating function
+		// So we'll use a simpler approach: just convert to int and from 0-100 to 0-5
+		if rating, err := strconv.Atoi(albumRating[0]); err == nil {
+			a.Rating = int(math.Round(float64(rating) / 20))
+		}
+	}
 
 	return a
 }

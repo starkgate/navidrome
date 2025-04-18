@@ -253,4 +253,8 @@ const (
 	TagMusicBrainzConductorID TagName = "musicbrainz_conductorid"
 	TagMusicBrainzArrangerID  TagName = "musicbrainz_arrangerid"
 	TagMusicBrainzPerformerID TagName = "musicbrainz_performerid"
+
+	// Rating tags
+	TagRating      TagName = "rating"
+	TagAlbumRating TagName = "albumrating"
 )

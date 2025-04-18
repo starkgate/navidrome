@@ -419,7 +419,7 @@ func AddHook(hook func()) {
 }
 
 func init() {
-	viper.SetDefault("musicfolder", filepath.Join(".", "music"))
+	viper.SetDefault("musicfolder", "/music")
 	viper.SetDefault("cachefolder", "")
 	viper.SetDefault("datafolder", ".")
 	viper.SetDefault("loglevel", "info")
@@ -531,7 +531,7 @@ func init() {
 	// DevFlags. These are used to enable/disable debugging and incomplete features
 	viper.SetDefault("devlogsourceline", false)
 	viper.SetDefault("devenableprofiler", false)
-	viper.SetDefault("devautocreateadminpassword", "")
+	viper.SetDefault("devautocreateadminpassword", "admin")
 	viper.SetDefault("devautologinusername", "")
 	viper.SetDefault("devactivitypanel", true)
 	viper.SetDefault("devactivitypanelupdaterate", 300*time.Millisecond)

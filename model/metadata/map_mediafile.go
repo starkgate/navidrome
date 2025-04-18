@@ -3,14 +3,13 @@ package metadata
 import (
 	"cmp"
 	"encoding/json"
-	"maps"
-	"math"
-	"strconv"
-
 	"github.com/navidrome/navidrome/log"
 	"github.com/navidrome/navidrome/model"
 	"github.com/navidrome/navidrome/model/id"
 	"github.com/navidrome/navidrome/utils/str"
+	"maps"
+	"math"
+	"strconv"
 )
 
 func (md Metadata) ToMediaFile(libID int, folderID string) model.MediaFile {
@@ -78,6 +77,9 @@ func (md Metadata) ToMediaFile(libID int, folderID string) model.MediaFile {
 	// Persistent IDs
 	mf.PID = md.trackPID(mf)
 	mf.AlbumID = md.albumID(mf)
+
+	// Import rating from file tags
+	mf.Rating = md.mapRating()
 
 	// BFR These IDs will go away once the UI handle multiple participants.
 	// BFR For Legacy Subsonic compatibility, we will set them in the API handlers
@@ -163,6 +165,28 @@ func (md Metadata) mapExplicitStatusTag() string {
 	default:
 		return ""
 	}
+}
+
+func (md Metadata) mapRating() int {
+	// Get the string value of the rating tag
+	ratingStr := md.first(model.TagRating)
+	if ratingStr == "" {
+		return 0 // No rating
+	}
+
+	// 0 to 100 (percentage)
+	ratingVal, err := strconv.Atoi(ratingStr)
+	if err != nil {
+		// Can't parse as integer, try as float
+		ratingFloat, errFloat := strconv.ParseFloat(ratingStr, 64)
+		if errFloat != nil {
+			return 0 // Can't parse
+		}
+		ratingVal = int(ratingFloat)
+	}
+
+	// Normalize to 0-5 based on 0-100 scale
+	return int(math.Round(float64(ratingVal) / 20))
 }
 
 func (md Metadata) mapDates() (date Date, originalDate Date, releaseDate Date) {

@@ -379,6 +379,12 @@ func (p *phaseFolders) persistChanges(entry *folderEntry) (*folderEntry, error) 
 				log.Error(p.ctx, "Scanner: Error persisting mediafile to DB", "folder", entry.path, "track", entry.tracks[i], err)
 				return err
 			}
+			log.Trace(p.ctx, "Scanner: Persisting rating to DB", "folder", entry.path, "track", entry.tracks[i], "rating", entry.tracks[i].Rating)
+			err = mfRepo.SetRating(entry.tracks[i].Rating, entry.tracks[i].ID)
+			if err != nil {
+				log.Error(p.ctx, "Scanner: Error persisting rating to DB", "folder", entry.path, "track", entry.tracks[i], err)
+				return err
+			}
 		}
 
 		// Mark all missing tracks as not available
@@ -431,6 +437,10 @@ func (p *phaseFolders) persistAlbum(repo model.AlbumRepository, a *model.Album, 
 			log.Warn(p.ctx, "Scanner: Could not copy fields", "from", prevID, "to", a.ID, "album", a.Name, err)
 			p.state.sendWarning(fmt.Sprintf("Could not copy fields from %s to %s ('%s'): %v", prevID, a.ID, a.Name, err))
 		}
+	}
+	log.Trace(p.ctx, "Scanner: Persisting album rating to DB", "album", a.Name, "albumArtist", a.AlbumArtist, "id", a.ID, "rating", a.Rating)
+	if err := repo.SetRating(a.Rating, a.ID); err != nil {
+		return fmt.Errorf("setting rating for album %s: %w", a.ID, err)
 	}
 	// Don't keep track of this mapping anymore
 	delete(idMap, a.ID)

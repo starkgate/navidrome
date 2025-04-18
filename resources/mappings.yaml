@@ -197,6 +197,13 @@ main:
     type: pair
   explicitstatus:
     aliases: [ itunesadvisory, rtng ]
+  rating:
+    aliases: [ txxx:rating, rating, popm, popularimeter, ----:com.apple.itunes:rating, wm/userrating ]
+    type: int
+  albumrating:
+    aliases: [ txxx:albumrating, txxx:album rating, album rating, albumrating, ----:com.apple.itunes:albumrating, wm/albumrating ]
+    type: int
+    album: true
 
 # Additional tags. You can add new tags without the need to modify the code. They will be available as fields
 # for smart playlists
