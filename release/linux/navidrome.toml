@@ -1,2 +1,9 @@
-DataFolder = "/var/lib/navidrome"
-MusicFolder = "/opt/navidrome/music"
+DataFolder = "/mnt/c/Solenix/navidrome/release/linux/data"
+MusicFolder = "/mnt/c/Solenix/navidrome/release/linux/music"
+
+# Make logging more verbose
+LogLevel = "debug"
+
+# This option will always create an `admin` user with the specified password, so you don't
+# have to create a user every time you delete your dev database
+DevAutoCreateAdminPassword = "password"
