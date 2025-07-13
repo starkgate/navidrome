@@ -4,6 +4,7 @@ package scanner
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"sync/atomic"
 	"time"
 
@@ -76,6 +77,31 @@ func (p *phaseRefreshAlbums) stages() []ppl.Stage[*model.Album] {
 	}
 }
 
+func updateTrackRating(mf *model.MediaFile, p *phaseRefreshAlbums) {
+	tagVals, ok := mf.Tags["trackrating"]
+	if !ok || len(tagVals) == 0 {
+		return
+	}
+
+	tagRating100, err := strconv.Atoi(tagVals[0])
+	if err != nil {
+		log.Debug("Invalid 'trackrating'", "trackID", mf.ID, "value", tagVals[0], "error", err)
+		return
+	}
+
+	tagRating5 := tagRating100 / 20
+	if tagRating5 == mf.Rating {
+		return
+	}
+
+	log.Debug("Updating rating", "trackID", mf.ID, "old", mf.Rating, "new", tagRating5)
+
+	mf.Rating = tagRating5
+	if err := p.ds.MediaFile(p.ctx).SetRating(tagRating5, mf.ID); err != nil {
+		log.Debug("Failed to set rating", "trackID", mf.ID, "error", err)
+	}
+}
+
 func (p *phaseRefreshAlbums) filterUnmodified(album *model.Album) (*model.Album, error) {
 	mfs, err := p.ds.MediaFile(p.ctx).GetAll(model.QueryOptions{Filters: squirrel.Eq{"album_id": album.ID}})
 	if err != nil {
@@ -96,7 +122,38 @@ func (p *phaseRefreshAlbums) filterUnmodified(album *model.Album) (*model.Album,
 		p.skipped.Add(1)
 		return nil, nil
 	}
+
+	for i := range mfs {
+		mf := &mfs[i]
+		updateTrackRating(mf, p)
+	}
+
 	return &newAlbum, nil
+}
+
+func updateAlbumRating(album *model.Album, p *phaseRefreshAlbums) {
+	tagVals, ok := album.Tags["albumrating"]
+	if !ok || len(tagVals) == 0 {
+		return
+	}
+
+	tagRating100, err := strconv.Atoi(tagVals[0])
+	if err != nil {
+		log.Debug("Invalid 'albumrating'", "albumID", album.ID, "value", tagVals[0], "error", err)
+		return
+	}
+
+	tagRating5 := tagRating100 / 20
+	if tagRating5 == album.Rating {
+		return
+	}
+
+	log.Debug("Updating rating", "albumID", album.ID, "old", album.Rating, "new", tagRating5)
+
+	album.Rating = tagRating5
+	if err := p.ds.Album(p.ctx).SetRating(tagRating5, album.ID); err != nil {
+		log.Debug("Failed to set rating", "albumID", album.ID, "error", err)
+	}
 }
 
 func (p *phaseRefreshAlbums) refreshAlbum(album *model.Album) (*model.Album, error) {
@@ -105,6 +162,8 @@ func (p *phaseRefreshAlbums) refreshAlbum(album *model.Album) (*model.Album, err
 	}
 	start := time.Now()
 	err := p.ds.Album(p.ctx).Put(album)
+	updateAlbumRating(album, p)
+
 	log.Debug(p.ctx, "Scanner: refreshing album", "album_id", album.ID, "name", album.Name, "songCount", album.SongCount, "elapsed", time.Since(start), err)
 	if err != nil {
 		return nil, fmt.Errorf("refreshing album %s: %w", album.ID, err)
