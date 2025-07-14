@@ -8,6 +8,7 @@ import (
 	"maps"
 	"path"
 	"slices"
+	"strconv"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -367,6 +368,22 @@ func (p *phaseFolders) persistChanges(entry *folderEntry) (*folderEntry, error) 
 				log.Error(p.ctx, "Scanner: Error persisting album to DB", "folder", entry.path, "album", entry.albums[i], err)
 				return err
 			}
+
+			// Extract albumrating from tags and update album.Rating
+			if tagVals, ok := entry.albums[i].Tags["albumrating"]; ok && len(tagVals) > 0 {
+				if tagRating100, err := strconv.Atoi(tagVals[0]); err == nil {
+					tagRating5 := tagRating100 / 20
+					if tagRating5 != entry.albums[i].Rating {
+						log.Debug("Updating rating", "albumID", entry.albums[i].ID, "old", entry.albums[i].Rating, "new", tagRating5)
+						entry.albums[i].Rating = tagRating5
+						if err := albumRepo.SetRating(tagRating5, entry.albums[i].ID); err != nil {
+							log.Debug("Failed to set rating", "albumID", entry.albums[i].ID, "error", err)
+						}
+					}
+				} else {
+					log.Debug("Invalid 'albumrating'", "albumID", entry.albums[i].ID, "value", tagVals[0], "error", err)
+				}
+			}
 			if entry.albums[i].Name != consts.UnknownAlbum {
 				entry.job.cw.PreCache(entry.albums[i].CoverArtID())
 			}
@@ -378,6 +395,21 @@ func (p *phaseFolders) persistChanges(entry *folderEntry) (*folderEntry, error) 
 			if err != nil {
 				log.Error(p.ctx, "Scanner: Error persisting mediafile to DB", "folder", entry.path, "track", entry.tracks[i], err)
 				return err
+			}
+
+			if tagVals, ok := entry.tracks[i].Tags["trackrating"]; ok && len(tagVals) > 0 {
+				if tagRating100, err := strconv.Atoi(tagVals[0]); err == nil {
+					tagRating5 := tagRating100 / 20
+					if tagRating5 != entry.tracks[i].Rating {
+						log.Debug("Updating rating", "trackID", entry.tracks[i].ID, "old", entry.tracks[i].Rating, "new", tagRating5)
+						entry.tracks[i].Rating = tagRating5
+						if err := mfRepo.SetRating(tagRating5, entry.tracks[i].ID); err != nil {
+							log.Debug("Failed to set rating", "trackID", entry.tracks[i].ID, "error", err)
+						}
+					}
+				} else {
+					log.Debug("Invalid 'trackrating'", "trackID", entry.tracks[i].ID, "value", tagVals[0], "error", err)
+				}
 			}
 		}
 
